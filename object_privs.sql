@@ -2,7 +2,8 @@
 -- this will create a pivot table of object privileges. 
 -- to fine tune this, add a where clause to dba_tab_privs
 
-SELECT GRANTEE, 
+SELECT grantee_to, 
+      GRANTEE_from, 
       GRANTABLE, 
       OWNER, 
       TABLE_NAME, 
@@ -25,13 +26,17 @@ SELECT GRANTEE,
       "'INDEX'" IDX,
       "'REFERENCES'" REF
 FROM
-(select grantee, 
-    GRANTABLE, 
-    owner,
-    table_name, 
-    type, 
-    privilege
-FROM DBA_TAB_PRIVS
+(SELECT R.GRANTEE "GRANTEE_TO",
+    T.GRANTEE GRANTEE_FROM, 
+    T.GRANTABLE, 
+    T.owner,
+    T.table_name, 
+    T.TYPE, 
+    T.PRIVILEGE
+FROM DBA_TAB_PRIVS T,
+	 DBA_ROLE_PRIVS R
+WHERE T.GRANTEE = R.GRANTED_ROLE (+)
+  AND T.OWNER = 'IRP'
 )
 PIVOT (COUNT(PRIVILEGE)
     FOR PRIVILEGE IN ('SELECT',
@@ -51,4 +56,4 @@ PIVOT (COUNT(PRIVILEGE)
                       'WRITE',
                       'INDEX',
                       'REFERENCES'))
-ORDER BY OWNER, TABLE_NAME, GRANTEE;
+ORDER BY OWNER, TABLE_NAME, GRANTEE_TO, GRANTEE_FROM;
